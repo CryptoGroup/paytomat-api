@@ -32,7 +32,7 @@ Errors are always reported as JSON encoded object with "error" key. E.g.:
       "error": "error_description"
     }
 
-## GET `token`
+## GET `/token`
 
 Returns JWT token for given credential.
 
@@ -54,7 +54,7 @@ Object with properties:
       "token": "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6NiwicmVhbG0iOiJtZXJjaGFudF9rZXkifQ.hTdblIJI6mcPCyZ5u9eiYI8e6tRJ5VRtU0AbLQ8WlAw"
     }
 
-## GET `currencies`
+## GET `/currencies`
 
 Returns available currency codes.
 
@@ -83,7 +83,7 @@ An array of currency records.
       ]
     }
 
-## GET `exchange_rates`
+## GET `/exchange_rates`
 
 Returns currency exchange rates.
 
@@ -112,7 +112,7 @@ An object of exchange rates for chosen currency.
       }
     }
 
-## GET `balance`
+## GET `/balance`
 
 Returns current balances for currencies.
 
@@ -130,7 +130,7 @@ Object with amounts for every available currency.
       }
     }
 
-## POST `create_transaction`
+## POST `/create_transaction`
 
 ### Input:
 
@@ -167,6 +167,27 @@ Object with amounts for every available currency.
     Amount to send.
 
     *Validation*: **required**, float.
+
+* `callback_url`
+
+    And URL to post back to after transactions is completed.
+
+    *Validation*: **optional**.
+
+    Postback structure:
+
+      {
+        "merchant_id": <merchant.id>,
+        "product_id": <product.id>,
+        "tx_code": <tx.code>,
+        "tx_id": <tx.id>,
+        "amount": <tx.amount_out>,
+        "currency": <tx.currency.code>,
+        "qr_code": <qr_code>,
+        "details": <tx.details>,
+        "tx_status": <tx.status>,
+        "custom_css": <product.custom_css>
+      }
 
 ### Output:
 
@@ -208,9 +229,15 @@ Object with properties:
 
     *Validation*: text.
 
+* `note`
+
+    Address notification.
+
+    *Validation*: text.
+
 ### Example:
 
-`curl 'http://username:password@app.paytomat.com/api/v1/create_transaction' -d '{ "ref": 125, "currency_in": "USD", "currency_out": "BTC", "amount_in": 100 }'`
+`curl 'https://username:password@app.paytomat.com/api/v1/create_transaction' -d '{ "ref": 125, "currency_in": "USD", "currency_out": "BTC", "amount_in": 100 }'`
 
     {
       "amount_out": 0.041896,
@@ -218,10 +245,11 @@ Object with properties:
       "id": 3,
       "qr_code": "bitcoin:38iub2TZpsTGQjZc7zhGcBcphxPk6eGpHa?amount=0.041896",
       "rate": 0.00041896,
-      "address": "38iub2TZpsTGQjZc7zhGcBcphxPk6eGpHa"
+      "address": "38iub2TZpsTGQjZc7zhGcBcphxPk6eGpHa",
+      "note": "Please turn off transaction encryption if you encounter public key error"
     }
 
-## POST `cancel_transaction`
+## POST `/cancel_transaction`
 
 Manually cancel pending transaction.
 
@@ -251,14 +279,14 @@ Manually cancel pending transaction.
 
 ### Example:
 
-`curl 'http://username:password@app.paytomat.com/api/v1/cancel_transaction' -d '{ "id": 9 }'`
+`curl 'https://username:password@app.paytomat.com/api/v1/cancel_transaction' -d '{ "id": 9 }'`
 
     {
       "status": "cancelled",
       "status_description": "Transaction has been cancelled"
     }
 
-## POST `chargeback_transaction`
+## POST `/chargeback_transaction`
 
 Request chargeback for transaction.
 
@@ -286,14 +314,14 @@ Request chargeback for transaction.
 
 ### Example:
 
-`curl 'http://username:password@app.paytomat.com/api/v1/chargeback_transaction' -d '{ "id": 3 }'`
+`curl 'https://username:password@app.paytomat.com/api/v1/chargeback_transaction' -d '{ "id": 3 }'`
 
     {
       "status": "chargeback_scheduled",
       "status_description": "Transaction has been scheduled for chargeback"
     }
 
-## GET `transaction`
+## GET `/transaction`
 
 Get single transaction data.
 
@@ -387,9 +415,28 @@ Object with transaction properties:
 
     *Validation*: text.
 
+* `note`
+
+    Address notification.
+
+    *Validation*: text.
+
+* `product_id`
+
+    Product id (if transaction is attached to a product).
+
+    *Validation*: optional, integer.
+
+* `callback_url`
+
+    And URL to post back to after transactions is completed.
+
+    *Validation*: optional, text.
+
+
 ### Example:
 
-`curl 'http://username:password@app.paytomat.com/api/v1/transaction?id=1'`
+`curl 'https://username:password@app.paytomat.com/api/v1/transaction?id=1'`
 
     {
       "transaction": {
@@ -405,11 +452,12 @@ Object with transaction properties:
         "ref": "CK00004",
         "status": "cancellation",
         "updated": "2017-05-24 16:34:24",
-        "qr_code": "bitcoin:2N1sNUrHUmMw61rSyFPPmvDYHJrCk7QCy8x?amount=0.0000000511751"
+        "qr_code": "bitcoin:2N1sNUrHUmMw61rSyFPPmvDYHJrCk7QCy8x?amount=0.0000000511751",
+        "note": "Please turn off transaction encryption if you encounter public key error"
       }
     }
 
-## GET `transactions`
+## GET `/transactions`
 
 Get a list of transactions.
 
@@ -435,13 +483,21 @@ Get a list of transactions.
 
     *Validation*: optional, depends on limit, integer.
 
+* `order_by`
+
+    Sort order by one of these fields: id, status, updated, created, order_id, ref.
+    By default, sort direction is ascending. Add - character before field name to sort by descending order.
+
+    *Validation*: optional, string.
+
 ### Output:
 
-Array of transaction records (see `transaction` call).
+Array of transaction records (see `transaction` ,)..
+
 
 ### Example:
 
-`curl 'http://username:password@app.paytomat.com/api/v1/transactions'`
+`curl 'https://username:password@app.paytomat.com/api/v1/transactions?order_by=-updated'`
 
     {
       "transactions": [
@@ -458,7 +514,8 @@ Array of transaction records (see `transaction` call).
           "ref": "CK00004",
           "status": "cancellation",
           "updated": "2017-05-24 16:34:24",
-          "qr_code": "bitcoin:2N1sNUrHUmMw61rSyFPPmvDYHJrCk7QCy8x?amount=0.0000000511751"
+          "qr_code": "bitcoin:2N1sNUrHUmMw61rSyFPPmvDYHJrCk7QCy8x?amount=0.0000000511751",
+          "note": "Please turn off transaction encryption if you encounter public key error"
         },
         {
           "address": "3DahmyivDiKeAo67FREygXJEZgD5G4q96u",
@@ -473,53 +530,301 @@ Array of transaction records (see `transaction` call).
           "ref": "CK00006",
           "status": "success",
           "updated": "2017-05-24 16:34:24",
-          "qr_code": "bitcoin:2N1sNUrHUmMw61rSyFPPmvDYHJrCk7QCy8x?amount=0.0000000511751"
+          "qr_code": "bitcoin:2N1sNUrHUmMw61rSyFPPmvDYHJrCk7QCy8x?amount=0.0000000511751",
+          "note": "Please turn off transaction encryption if you encounter public key error"
         }
       ]
     }
 
-## POST `widget`
 
-Get ready to use iframe with embedded parameters and signature.
+## POST /broadcast_transaction
+
+Broadcast transaction
 
 ### Input:
 
-* `public_key`
+* `currency`
 
-    Internal public_key ID .
+  Transaction currency code.
 
-    *Validation*: **required**, alphanumeric.
+  *Validation*: **required**, string.
 
-* `order_id`
+* `txid`
 
-    Reference ID.
+  Transaction id.
 
-    *Validation*: **required**, alphanumeric, unique.
+  *Validation*: **required**, string.
 
-* `currency_in`
+* `receiver`
 
-    Code for send currency.
+  Receiver address.
 
-    *Validation*: **required**, text.
+    *Validation*: **required**, string.
 
-* `amount_in`
+* `amount`
 
-    Amount to send.
+    Transaction amount.
 
-    *Validation*: **required**, float.
-
-* `callback_url`
-
-    Callback url .
-
-    *Validation*: optional, text.
-
-### Output:
-
-Ready to use iframe string (HTML format).
+    *Validation*: **required**, decimal, greater than 0.
 
 ### Example:
 
-`curl 'http://username:password@app.paytomat.com/api/v1/widget/<public_key>' -d '{ "order_id": 125, "currency_in": "USD", "amount_in": 100, "callback_url": "http://mysupersite.com/paytomat_callback" }'`
+`curl 'https://username:password@app.paytomat.com/api/v1/broadcast_transaction' -d '{"currency": "BTC", "txid": "f39448872b469a6f49b7d8b037adf810519f1f2b583cba852e7f5128f53daf29", "receiver": "1ApkXfxWgJ5CBHzrogVSKz23umMZ32wvNA", "amount": 0.07227808}'`
 
-    <iframe src="http://app.paytomat.com/gateway/PT6J4MCX6Q?order_id=125&currency_in=USD&amount_in=100&callback_url=http://mysupersite.com/paytomat_callback&signature=VERY0LONG0SUPERSICRET0SIGNATURE"></iframe>
+    {
+      "success": 1
+    }
+
+## GET `/product`
+
+Get product data
+
+### Input:
+
+* `id`
+
+    Internal transaction ID.
+
+    *Validation*: **required**, integer, unique.
+
+### Output:
+
+Object with product properties:
+
+* `id`
+
+    Internal product ID.
+
+    *Validation*: integer, unique.
+
+* `amount`
+
+    Product price.
+
+    *Validation*: decimal, greater than 0.
+
+* `currency`
+
+    Price currency code.
+
+    *Validation*: text.
+
+* `title`
+
+    Product title
+
+    *Validation*: text.
+
+* `tx_success`
+
+    Number of successful transactions for this product.
+
+    *Validation*: integer.
+
+* `unit`
+
+    Product unit.
+
+    "single" - customer will not be able to change bought quantity
+    "piece" - product is sold by piece
+    "decimal" - product is sold of any amount
+
+    *Validation*: text.
+
+* `callback_url`
+
+    And URL to post back to after transactions is completed. See `POST /create_product`.
+
+    *Validation*: URL.
+
+* `skip_email`
+
+    Set this to 1 if you don't want the customer to input their email.
+
+    *Validation*: 1 or 0.
+
+* `custom_css`
+
+    Custom css style.
+
+    *Validation*: text.
+
+* `fields`
+
+    Array of objects describing product fields. See `POST /create_product`.
+
+### Example:
+
+`curl 'https://username:password@app.paytomat.com/api/v1/product?id=1'`
+
+    {
+      "product": {
+        "id": 1,
+        "amount": "5.00",
+        "currency": "USD",
+        "title": "Croissant",
+        "unit": "piece"
+        "fields": [],
+        "callback_url": "",
+        "tx_success": 7,
+        "custom_css": "https://somesite.com/css/style.css",
+      }
+    }
+
+## POST `/create_product`
+
+Create new product.
+
+### Input:
+
+* `id`
+
+    Internal transaction ID.
+
+    *Validation*: **required**, integer, unique.
+
+* `amount`
+
+    Product price.
+
+    *Validation*: **required**, decimal, greater than 0.
+
+* `currency`
+
+    Price currency code.
+
+    *Validation*: **required**, text.
+
+* `title`
+
+    Product title
+
+    *Validation*: **required**, text.
+
+* `unit`
+
+    Product unit.
+
+    "single" - customer will not be able to change bought quantity
+    "piece" - product is sold by piece
+    "decimal" - product is sold of any amount
+
+    *Validation*: **required**, text.
+
+* `callback_url`
+
+    And URL to post back to after transactions is completed.
+
+    *Validation*: URL.
+
+    Postback structure:
+
+      {
+        "merchant_id": <merchant.id>,
+        "product_id": <product.id>,
+        "tx_code": <tx.code>,
+        "tx_id": <tx.id>,
+        "amount": <tx.amount_out>,
+        "currency": <tx.currency.code>,
+        "qr_code": <qr_code>,
+        "details": <tx.details>,
+        "tx_status": <tx.status>,
+        "custom_css": <product.custom_css>
+      }
+
+* `custom_css`
+
+    Custom css style.
+
+    *Validation*: text.
+
+* `fields`
+
+    Array of objects describing product fields.
+
+    Field structure sample:
+
+      [
+        {
+          "id": "shipping_address",
+          "title": "Shipping Address",
+          "type": "text",
+          "min_length": "10",
+          "max_length": "42"
+          "is_required": 1,
+          "options": "",
+        }
+      ]
+
+### Output:
+
+Object with properties:
+
+* `id`
+
+    Internal product ID.
+
+    *Validation*: integer, unique.
+
+### Example:
+
+`curl 'https://username:password@app.paytomat.com/api/v1/create_product' -d '{ "title": "Pierogi", "amount": 15, "currency": "UAH", "unit": "piece", "fields": [ { "id": "comment", "title": "Comment", "is_required": 0, "type": "text", "custom_css": "is_optional" } ] }'`
+
+    {
+      "id": 12
+    }
+
+## PUT `/product/{id}`
+
+Update product properties.
+
+### Input:
+
+* `id`
+
+    Internal transaction ID.
+
+    *Validation*: **required**, integer, unique.
+
+Product fields are validated as per `POST /create_product`, but optional.
+
+### Output:
+
+Object with properties:
+
+* `updated`
+
+    Flag of whether product has been updated.
+
+    *Validation*: boolean.
+
+### Example:
+
+`curl 'https://username:password@app.paytomat.com/api/v1/product/12' -X PUT -d '{ "amount": 20 }'`
+
+    {
+      "updated": 1
+    }
+
+
+## GET `/payment_url`
+
+Returns URL to merchant payment widget for given credentials.
+
+### Output:
+
+Object with properties:
+
+* `url`
+
+    URL to merchant payment widget.
+
+    *Validation*: string.
+
+### Example:
+
+`curl 'https://username:password@app.paytomat.com/api/v1/payment_url'`
+
+    {
+      "url": "https://app.paytomat.com/pay/2mVQcpFLk9f"
+    }
